@@ -2,7 +2,6 @@ import os
 from typing import Literal, Optional, Iterator
 from openai import OpenAI
 
-
 class OpenAICompatibleLLM:
     def __init__(
         self,
@@ -48,8 +47,8 @@ class OpenAICompatibleLLM:
             print("✅ LLM响应成功")
             return response.choices[0].message.content
         except Exception as e:
-            print("⛔ LLM调用失败")
-            return str(e)
+            print(f"⛔ LLM调用失败：{str(e)}")
+            return None
     
     def stream_invoke(self, messages: list[dict[str, str]], **kwargs) -> Iterator[str]:
         print(f"🤖 正在调用{self.provider}:{self.model}模型")
@@ -67,5 +66,5 @@ class OpenAICompatibleLLM:
                     yield content
             yield "\n"
         except Exception as e:
-            print("⛔ LLM调用失败")
-            yield str(e)
+            print(f"⛔ LLM调用失败：{str(e)}")
+            yield None

@@ -4,7 +4,6 @@ from .config import Config
 from .message import Message
 from .llm import OpenAICompatibleLLM
 
-
 class Agent(ABC):
     def __init__(
         self,

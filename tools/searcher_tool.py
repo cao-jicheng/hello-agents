@@ -1,0 +1,105 @@
+import os
+import json
+import requests
+import sys
+sys.path.append("..")
+from dotenv import load_dotenv
+from core import OpenAICompatibleLLM
+
+SUMMARY_PROMPT = \
+"""
+## 搜索结果
+{search_results}
+
+## 目标任务
+对**搜索结果**中的多项内容，进行汇总提炼，输出一段话
+
+## 注意事项
+- 提炼的要素全部来源于**搜索结果**中的内容，不要捏造虚假内容，不要新增信息
+- 输出内容要简洁易懂，不要有错别字，不要前后矛盾
+
+现在开始你的任务
+"""
+
+class SearchTool:
+    def __init__(self):
+        self.name = "search_tool"
+        self.description = "智能搜索工具，支持多个搜索源，大模型智能提炼汇总搜索信息"
+        self.search_sources = []
+        self._setup()
+
+    def _setup(self):
+        load_dotenv()
+        tavily_api_key = os.getenv("TAVILY_API_KEY")
+        if tavily_api_key:
+            try:
+                from tavily import TavilyClient
+                self.tavily_client = TavilyClient(api_key=tavily_api_key)
+                self.search_sources.append("tavily")
+                print("✅ tavily搜索源已启用")
+            except ImportError:
+                print("⚠️  tavily-python库未安装 (uv add tavily-python)")
+        bocha_api_key = os.getenv("BOCHA_API_KEY")
+        if bocha_api_key:
+            self.bocha_api_key = bocha_api_key
+            self.search_sources.append("bocha")
+            print("✅ bocha搜索源已启用")
+        self.llm = OpenAICompatibleLLM()
+
+    def search(self, query: str, auto_summary: bool=False) -> str:
+        search_results = ""
+        if not query.strip():
+            print("⚠️  警告：搜索查询不能为空")
+            return search_results
+        if not self.search_sources:
+            print("⛔ 没有可用的搜索源，请配置API密钥")
+            return search_results
+        print(f"🔍 开始网络搜索：{query}")
+        for source in self.search_sources:
+            try:
+                if source == "tavily":
+                    search_results += self._search_with_tavily(query)
+                elif source == "bocha":
+                    search_results += self._search_with_bocha(query)
+                print(f"🌐 {source}已完成搜索")
+            except Exception as e:
+                print(f"⚠️  {source}搜索失败：{str(e)}")
+                continue
+        if auto_summary and search_results:
+            print("🎯 AI智能提炼汇总搜索内容")
+            prompt = SUMMARY_PROMPT.format(search_results=search_results)
+            messages = [{"role": "user", "content": prompt}]
+            summarized_result = self.llm.invoke(messages)
+            if summarized_result:
+                search_results += "=== AI提炼汇总后的结果 ===\n"
+                search_results += summarized_result
+        return search_results
+
+    def _search_with_tavily(self, query: str) -> str:
+        response = self.tavily_client.search(query=query, max_results=3)
+        result = "=== tavily搜索到的结果 ===\n"
+        for i, item in enumerate(response.get("results", []), 1):
+            result += f"[{i}] {item.get('title', '')}\n"
+            result += f"{item.get('content', '')[:1000]}\n\n"
+        return result
+
+    def _search_with_bocha(self, query: str) -> str:
+        url = "https://api.bocha.cn/v1/web-search"
+        headers = {
+            "Authorization": f"Bearer {self.bocha_api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = json.dumps({
+            "query": query,
+            "summary": True,
+            "count": 3
+        })
+        response = requests.request("POST", url, headers=headers, data=payload)
+        response = response.json()
+        result = "=== bocha搜索到的结果 ===\n"
+        for i, item in enumerate(response["data"]["webPages"]["value"], 1):
+            result += f"[{i}] {item.get('name', '')}\n"
+            result += f"{item.get('summary', '')[:1000]}\n\n"
+        return result
+
+searcher = SearchTool()
