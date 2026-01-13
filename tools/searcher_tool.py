@@ -3,7 +3,7 @@ import json
 import requests
 import sys
 sys.path.append("..")
-from dotenv import load_dotenv
+from typing import Dict
 from core import OpenAICompatibleLLM
 
 SUMMARY_PROMPT = \
@@ -29,51 +29,46 @@ class SearchTool:
         self._setup()
 
     def _setup(self):
-        load_dotenv()
         tavily_api_key = os.getenv("TAVILY_API_KEY")
         if tavily_api_key:
             try:
                 from tavily import TavilyClient
                 self.tavily_client = TavilyClient(api_key=tavily_api_key)
                 self.search_sources.append("tavily")
-                print("✅ tavily搜索源已启用")
             except ImportError:
                 print("⚠️  tavily-python库未安装 (uv add tavily-python)")
         bocha_api_key = os.getenv("BOCHA_API_KEY")
         if bocha_api_key:
             self.bocha_api_key = bocha_api_key
             self.search_sources.append("bocha")
-            print("✅ bocha搜索源已启用")
         self.llm = OpenAICompatibleLLM()
 
-    def search(self, query: str, auto_summary: bool=False) -> str:
-        search_results = ""
+    def search(self, query: str, auto_summary: bool=True) -> Dict[str, str]:
         if not query.strip():
             print("⚠️  警告：搜索查询不能为空")
-            return search_results
+            return None
         if not self.search_sources:
             print("⛔ 没有可用的搜索源，请配置API密钥")
-            return search_results
+            return None
         print(f"🔍 开始网络搜索：{query}")
+        search_results = ""
         for source in self.search_sources:
             try:
                 if source == "tavily":
                     search_results += self._search_with_tavily(query)
                 elif source == "bocha":
                     search_results += self._search_with_bocha(query)
-                print(f"🌐 {source}已完成搜索")
+                print(f"✅ {source}已完成搜索")
             except Exception as e:
                 print(f"⚠️  {source}搜索失败：{str(e)}")
                 continue
+        summarized_result = ""
         if auto_summary and search_results:
             print("🎯 AI智能提炼汇总搜索内容")
             prompt = SUMMARY_PROMPT.format(search_results=search_results)
             messages = [{"role": "user", "content": prompt}]
             summarized_result = self.llm.invoke(messages)
-            if summarized_result:
-                search_results += "=== AI提炼汇总后的结果 ===\n"
-                search_results += summarized_result
-        return search_results
+        return {"search_results": search_results, "summarized_result": summarized_result}
 
     def _search_with_tavily(self, query: str) -> str:
         response = self.tavily_client.search(query=query, max_results=3)
@@ -102,4 +97,16 @@ class SearchTool:
             result += f"{item.get('summary', '')[:1000]}\n\n"
         return result
 
-searcher = SearchTool()
+_search_tool = SearchTool()
+
+def searcher(query: str) -> str:
+    result = _search_tool.search(query, auto_summary=False)
+    return result["search_results"] if result else ""
+
+def summarized_searcher(query: str) -> str:
+    result = _search_tool.search(query, auto_summary=True)
+    summarized_result = ""
+    if result:
+        print(f"🌐 互联网搜索结果\n {result['search_results']}")
+        summarized_result = result["summarized_result"]
+    return summarized_result

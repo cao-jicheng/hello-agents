@@ -235,7 +235,7 @@ class ToolRegistry:
         func_info = self._functions.get(name)
         return func_info["func"] if func_info else None
 
-    def execute_tool(self, name: str, input_text: str, **kwargs) -> str:
+    def execute_tool(self, name: str, input_text: str) -> str:
         if name in self._tools:
             tool = self._tools[name]
             try:
@@ -245,7 +245,7 @@ class ToolRegistry:
         elif name in self._functions:
             func = self._functions[name]["func"]
             try:
-                return func(input_text, **kwargs)
+                return func(input_text)
             except Exception as e:
                 return f"⛔ 错误：执行工具'{name}'时发生异常：{str(e)}"
         else:
@@ -269,5 +269,3 @@ class ToolRegistry:
         self._tools.clear()
         self._functions.clear()
         print("🗑️  所有工具已清空")
-
-global_registry = ToolRegistry()

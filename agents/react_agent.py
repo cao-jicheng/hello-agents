@@ -76,7 +76,7 @@ class ReActAgent(Agent):
 
     def run(self, input_text: str, **kwargs) -> str:
         self.current_history = []
-        print(f"🤖 智能体{self.name}开始处理用户输入：{input_text}")
+        print(f"🤖 智能体'{self.name}'开始处理用户输入：{input_text}")
         current_step = 0
         while current_step < self.max_steps:
             current_step += 1
@@ -88,6 +88,7 @@ class ReActAgent(Agent):
                 question=input_text,
                 history=history_str
             )
+            print(f"💡 提示词：\n{prompt}")
             messages = [{"role": "user", "content": prompt}]
             response_text = self.llm.invoke(messages, **kwargs)
             if not response_text:
@@ -108,7 +109,7 @@ class ReActAgent(Agent):
             if not tool_name or tool_param is None:
                 self.current_history.append("Observation：无效的Action格式，请检查")
                 continue
-            print(f"🎬 下一步行动：{tool_name}({tool_param})")
+            print(f"🎬 下一步行动：{tool_name}('{tool_param}')")
             observation = self.tool_registry.execute_tool(tool_name, tool_param)
             print(f"👀 结果观察：{observation}")
             self.current_history.append(f"Action: {action}")
@@ -127,11 +128,11 @@ class ReActAgent(Agent):
         return thought, action
     
     def _parse_action(self, action_text: str) -> Tuple[Optional[str], Optional[str]]:
-        match = re.match(r"(\w+)\[(.*)\]", action_text)
+        match = re.match(r"(\w+)\((.*)\)", action_text)
         if match:
             return match.group(1), match.group(2)
         return None, None
     
     def _parse_action_input(self, action_text: str) -> str:
-        match = re.match(r"\w+\[(.*)\]", action_text)
-        return match.group(1) if match else ""
+        match = re.match(r"\w+\((.*)\)", action_text)
+        return match.group(1) if match else "输出内容格式解析错误"

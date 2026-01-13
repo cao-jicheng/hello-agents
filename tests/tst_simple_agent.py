@@ -2,9 +2,6 @@ import sys
 sys.path.append("..")
 from core import OpenAICompatibleLLM
 from agents import SimpleAgent
-from dotenv import load_dotenv
-
-load_dotenv()
 
 client = SimpleAgent(name="AI助手", llm=OpenAICompatibleLLM())
 

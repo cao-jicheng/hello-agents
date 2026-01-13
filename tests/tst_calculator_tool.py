@@ -1,14 +1,6 @@
 import sys
 sys.path.append("..")
-from core import ToolRegistry
-from tools import calculator
-
-registry = ToolRegistry()
-registry.register_function(
-    name="calculator",
-    description="简单的数学计算器，支持基本四则混合运算和常见函数",
-    func=calculator
-)
+from tools import global_tool_registry
 
 test_cases = [
     "2 + 3", 
@@ -21,5 +13,5 @@ test_cases = [
 
 for i, expression in enumerate(test_cases, 1):
     print(f"测试{i}: {expression}")
-    result = registry.execute_tool("calculator", expression)
+    result = global_tool_registry.execute_tool("calculator", expression)
     print(f"结果: {result}\n")

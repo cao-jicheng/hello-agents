@@ -48,7 +48,7 @@ class OpenAICompatibleLLM:
             return response.choices[0].message.content
         except Exception as e:
             print(f"⛔ LLM调用失败：{str(e)}")
-            return None
+            return ""
     
     def stream_invoke(self, messages: list[dict[str, str]], **kwargs) -> Iterator[str]:
         print(f"🤖 正在调用{self.provider}:{self.model}模型")
@@ -67,4 +67,4 @@ class OpenAICompatibleLLM:
             yield "\n"
         except Exception as e:
             print(f"⛔ LLM调用失败：{str(e)}")
-            yield None
+            yield ""
