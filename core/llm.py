@@ -1,5 +1,5 @@
 import os
-from typing import Literal, Optional, Iterator
+from typing import Optional, Iterator
 from openai import OpenAI
 
 class OpenAICompatibleLLM:
@@ -36,7 +36,8 @@ class OpenAICompatibleLLM:
         else:
             return "Unknown"
 
-    def invoke(self, messages: list[dict[str, str]], **kwargs) -> str:
+    def invoke(self, prompts: str|list, **kwargs) -> str:
+        messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
         print(f"🤖 正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(
@@ -50,7 +51,8 @@ class OpenAICompatibleLLM:
             print(f"⛔ LLM调用失败：{str(e)}")
             return ""
     
-    def stream_invoke(self, messages: list[dict[str, str]], **kwargs) -> Iterator[str]:
+    def stream_invoke(self, prompts: str|list, **kwargs) -> Iterator[str]:
+        messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
         print(f"🤖 正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(

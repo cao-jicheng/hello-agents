@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any, List
+from typing import Optional, List
 from .config import Config
 from .message import Message
 from .llm import OpenAICompatibleLLM
@@ -16,7 +16,7 @@ class Agent(ABC):
         self.llm = llm
         self.system_prompt = system_prompt
         self.config = config or Config()
-        self._history: list[Message] = []
+        self._history: List[Message] = []
     
     @abstractmethod
     def run(self, input_text: str, **kwargs) -> str:
@@ -28,7 +28,7 @@ class Agent(ABC):
     def clear_history(self):
         self._history.clear()
     
-    def get_history(self) -> list[Message]:
+    def get_history(self) -> List[Message]:
         return self._history.copy()
     
     def stack_history_message(self, input_text: str) -> List[Message]:

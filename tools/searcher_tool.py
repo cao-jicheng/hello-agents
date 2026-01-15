@@ -66,8 +66,7 @@ class SearchTool:
         if auto_summary and search_results:
             print("🎯 AI智能提炼汇总搜索内容")
             prompt = SUMMARY_PROMPT.format(search_results=search_results)
-            messages = [{"role": "user", "content": prompt}]
-            summarized_result = self.llm.invoke(messages)
+            summarized_result = self.llm.invoke(prompt)
         return {"search_results": search_results, "summarized_result": summarized_result}
 
     def _search_with_tavily(self, query: str) -> str:

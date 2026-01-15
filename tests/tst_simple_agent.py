@@ -7,7 +7,7 @@ client = SimpleAgent(name="AI助手", llm=OpenAICompatibleLLM())
 
 while True:
     try:
-        text = input("我是您的AI助手，需要我做什么呢?\n")
+        text = input("📢 我是您的AI助手，需要我做什么呢?\n")
         if "bye" in text or "exit" in text:
             print("👋 再见，期待下次为您服务！")
             break

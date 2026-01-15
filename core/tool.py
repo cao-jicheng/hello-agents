@@ -259,7 +259,7 @@ class ToolRegistry:
             descriptions.append(f"- {name}: {info['description']}")
         return "\n".join(descriptions) if descriptions else "暂无可用工具"
 
-    def list_tools(self) -> list[str]:
+    def list_tools(self) -> List[str]:
         return list(self._tools.keys()) + list(self._functions.keys())
 
     def get_all_tools(self) -> list[Tool]:
