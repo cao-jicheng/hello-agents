@@ -1,9 +1,8 @@
-import ast
 import sys
 sys.path.append("..")
+import ast
 from typing import Optional, List, Dict
-from core import Agent, OpenAICompatibleLLM
-from core import Config, Message
+from core import Agent, OpenAICompatibleLLM, Message
 
 PLANNER_PROMPT = \
 """你是一个顶级的任务规划专家，你可以将用户提出的复杂问题分解成一个由多个简单步骤组成的行动计划。
@@ -53,15 +52,15 @@ class Planner:
 
     def plan(self, question: str, **kwargs) -> List[str]:
         prompt = self.prompt_template.format(question=question)
-        print(f"💡 Planner提示词：\n{prompt}")
+        print(f"💡\x20Planner提示词：\n{prompt}")
         response_text = self.llm.invoke(prompt, **kwargs)
-        print(f"📑 AI已完成任务规划：\n{response_text}")
+        print(f"🧮\x20AI已完成任务规划：\n{response_text}")
         try:
             plan_str = response_text.split("```python")[1].split("```")[0].strip()
             plan = ast.literal_eval(plan_str)
             return plan if isinstance(plan, list) else None
         except Exception as e:
-            print(f"⛔ 解析任务规划文本出错： {str(e)}")
+            print(f"⛔\x20解析任务规划文本出错： {str(e)}")
             return None
 
 class Executor:
@@ -77,18 +76,18 @@ class Executor:
         history = ""
         final_answer = ""
         for i, step in enumerate(plan, 1):
-            print(f"🎬 正在执行步骤{i}/{len(plan)}：{step}")
+            print(f"🎬\x20正在执行步骤{i}/{len(plan)}：{step}")
             prompt = self.prompt_template.format(
                 question=question,
                 plan=plan,
                 history=history if history else "无",
                 current_step=step
             )
-            print(f"💡 Executor提示词：\n{prompt}")
+            print(f"💡\x20Executor提示词：\n{prompt}")
             response_text = self.llm.invoke(prompt, **kwargs)
             history += f"步骤{i}：{step}\n执行结果：{response_text}\n"
             final_answer = response_text
-            print(f"✅ 步骤{i} 已完成，结果：{final_answer}")
+            print(f"✅\x20步骤{i} 已完成，结果：{final_answer}")
         return final_answer
 
 class PlanAndExecuteAgent(Agent):  
@@ -97,10 +96,9 @@ class PlanAndExecuteAgent(Agent):
         name: str,
         llm: OpenAICompatibleLLM,
         system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
-        custom_prompt: Optional[Dict[str, str]] = None
+        custom_prompt: Optional[Dict[str, str]] = None,
     ):
-        super().__init__(name, llm, system_prompt, config)
+        super().__init__(name, llm, system_prompt)
         if custom_prompt:
             planner_prompt = custom_prompt.get("planner")
             executor_prompt = custom_prompt.get("executor")
@@ -111,16 +109,16 @@ class PlanAndExecuteAgent(Agent):
         self.executor = Executor(self.llm, executor_prompt)
     
     def run(self, input_text: str, **kwargs) -> str:
-        print(f"🤖 智能体'{self.name}'开始处理问题：{input_text}")
+        print(f"🤖\x20智能体'{self.name}'开始处理问题：{input_text}")
         plan = self.planner.plan(input_text, **kwargs)
         if not plan:
             final_answer = "AI无法生成有效的行动计划，任务终止"
             self.add_message(Message(input_text, "user"))
             self.add_message(Message(final_answer, "assistant"))
-            print(f"⛔ 错误：{final_answer}")
+            print(f"⛔\x20智能体运行出错：{final_answer}")
             return final_answer
         final_answer = self.executor.execute(input_text, plan, **kwargs)
         self.add_message(Message(input_text, "user"))
         self.add_message(Message(final_answer, "assistant"))
-        print(f"🎉 最终答案：{final_answer}")
+        print(f"🎉\x20最终答案：{final_answer}")
         return final_answer

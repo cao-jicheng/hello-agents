@@ -1,27 +1,27 @@
 import os
-from typing import Optional, Iterator
 from openai import OpenAI
+from typing import Optional, Iterator
+from .config import LLMConfig
 
 class OpenAICompatibleLLM:
     def __init__(
         self,
         model: Optional[str] = None,
         base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        timeout: Optional[int] = None,
-    ):
-        self.model = model or os.getenv("LLM_MODEL")
-        self.base_url = base_url or os.getenv("LLM_BASE_URL")
-        self.api_key = api_key or os.getenv("LLM_API_KEY")
+        api_key: Optional[str] = None
+        ):
+        config = LLMConfig.from_env()
+        self.model = model or config.model
+        self.base_url = base_url or config.base_url
+        self.api_key = api_key or config.api_key
+        self.timeout = config.timeout
         if not all([self.model, self.base_url, self.api_key]):
-            raise Exception("模型名称、访问网址、API密钥需要显式指定或在.env文件中定义")
+            raise Exception("LLM模型名称、访问网址、API密钥需要显式指定或在.env文件中定义")
         self.provider = self._auto_detect_provider()
-        self.timeout = timeout or int(os.getenv("LLM_TIMEOUT", "60"))
-
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
-            timeout=self.timeout,
+            timeout=self.timeout
         )
 
     def _auto_detect_provider(self) -> str:
@@ -38,22 +38,22 @@ class OpenAICompatibleLLM:
 
     def invoke(self, prompts: str|list, **kwargs) -> str:
         messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
-        print(f"🤖 正在调用{self.provider}:{self.model}模型")
+        print(f"🚀\x20正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 **kwargs,
             )
-            print("✅ LLM响应成功")
+            print("✅\x20LLM响应成功")
             return response.choices[0].message.content
         except Exception as e:
-            print(f"⛔ LLM调用失败：{str(e)}")
+            print(f"⛔\x20LLM调用失败：{str(e)}")
             return ""
     
     def stream_invoke(self, prompts: str|list, **kwargs) -> Iterator[str]:
         messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
-        print(f"🤖 正在调用{self.provider}:{self.model}模型")
+        print(f"🚀\x20正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -61,12 +61,12 @@ class OpenAICompatibleLLM:
                 stream=True,
                 **kwargs,
             )
-            print("✅ LLM响应成功")
+            print("✅\x20LLM响应成功")
             for chunk in response:
                 content = chunk.choices[0].delta.content
                 if content:
                     yield content
             yield "\n"
         except Exception as e:
-            print(f"⛔ LLM调用失败：{str(e)}")
+            print(f"⛔\x20LLM调用失败：{str(e)}")
             yield ""

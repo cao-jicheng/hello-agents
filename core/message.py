@@ -1,6 +1,6 @@
-from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional, Dict, Any, Literal
 
 MessageRole = Literal["user", "assistant", "system", "tool"]
 

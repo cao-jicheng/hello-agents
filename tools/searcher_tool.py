@@ -1,10 +1,10 @@
+import sys
+sys.path.append("..")
 import os
 import json
 import requests
-import sys
-sys.path.append("..")
 from typing import Dict
-from core import OpenAICompatibleLLM
+from core import OpenAICompatibleLLM, SearchConfig
 
 SUMMARY_PROMPT = \
 """
@@ -29,28 +29,27 @@ class SearchTool:
         self._setup()
 
     def _setup(self):
-        tavily_api_key = os.getenv("TAVILY_API_KEY")
-        if tavily_api_key:
+        config = SearchConfig.from_env()
+        if config.tavily_api_key:
             try:
                 from tavily import TavilyClient
-                self.tavily_client = TavilyClient(api_key=tavily_api_key)
+                self.tavily_client = TavilyClient(api_key=config.tavily_api_key)
                 self.search_sources.append("tavily")
             except ImportError:
-                print("⚠️  tavily-python库未安装 (uv add tavily-python)")
-        bocha_api_key = os.getenv("BOCHA_API_KEY")
-        if bocha_api_key:
-            self.bocha_api_key = bocha_api_key
+                print("⚠️\x20\x20tavily-python库未安装")
+        if config.bocha_api_key:
+            self.bocha_api_key = config.bocha_api_key
             self.search_sources.append("bocha")
         self.llm = OpenAICompatibleLLM()
 
     def search(self, query: str, auto_summary: bool=True) -> Dict[str, str]:
         if not query.strip():
-            print("⚠️  警告：搜索查询不能为空")
-            return None
+            print("⛔\x20输入的搜索内容为空")
+            return {}
         if not self.search_sources:
-            print("⛔ 没有可用的搜索源，请配置API密钥")
-            return None
-        print(f"🔍 开始网络搜索：{query}")
+            print("⛔\x20没有可用的搜索源，请配置API密钥")
+            return {}
+        print(f"🔍\x20开始网络搜索：{query}")
         search_results = ""
         for source in self.search_sources:
             try:
@@ -58,13 +57,13 @@ class SearchTool:
                     search_results += self._search_with_tavily(query)
                 elif source == "bocha":
                     search_results += self._search_with_bocha(query)
-                print(f"✅ {source}已完成搜索")
+                print(f"✅\x20{source}已完成搜索")
             except Exception as e:
-                print(f"⚠️  {source}搜索失败：{str(e)}")
+                print(f"⚠️\x20\x20{source}搜索失败：{str(e)}")
                 continue
         summarized_result = ""
         if auto_summary and search_results:
-            print("🎯 AI智能提炼汇总搜索内容")
+            print("🎯\x20AI智能提炼汇总搜索内容")
             prompt = SUMMARY_PROMPT.format(search_results=search_results)
             summarized_result = self.llm.invoke(prompt)
         return {"search_results": search_results, "summarized_result": summarized_result}
@@ -106,6 +105,6 @@ def summarized_searcher(query: str) -> str:
     result = _search_tool.search(query, auto_summary=True)
     summarized_result = ""
     if result:
-        print(f"🌐 互联网搜索结果\n {result['search_results']}")
+        print(f"🌐\x20互联网搜索结果\n {result['search_results']}")
         summarized_result = result["summarized_result"]
     return summarized_result

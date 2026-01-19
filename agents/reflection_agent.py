@@ -1,8 +1,7 @@
 import sys
 sys.path.append("..")
 from typing import Optional, List, Dict, Any
-from core import Agent, OpenAICompatibleLLM
-from core import Config, Message
+from core import Agent, OpenAICompatibleLLM, Message
 
 REFLECTION_PROMPT = {
     "initial": """
@@ -43,7 +42,7 @@ class Memory:
 
     def add_record(self, record_type: str, content: str):
         self.records.append({"type": record_type, "content": content})
-        print(f"📝 记忆已更新，新增一条'{record_type}'记录")
+        print(f"📝\x20记忆已更新，新增一条'{record_type}'记录")
 
     def get_trajectory(self) -> str:
         trajectory = ""
@@ -66,45 +65,44 @@ class ReflectionAgent(Agent):
         name: str,
         llm: OpenAICompatibleLLM,
         system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
-        max_iterations: int = 5,
-        custom_prompt: Optional[Dict[str, str]] = None
+        custom_prompt: Optional[Dict[str, str]] = None,
+        max_iterations: int = 3,
     ):
-        super().__init__(name, llm, system_prompt, config)
+        super().__init__(name, llm, system_prompt)
         self.max_iterations = max_iterations
         self.prompt_template = custom_prompt if custom_prompt else REFLECTION_PROMPT
     
     def run(self, input_text: str, **kwargs) -> str:
-        print(f"🤖 智能体'{self.name}'开始处理问题：{input_text}")
+        print(f"🤖\x20智能体'{self.name}'开始处理问题：{input_text}")
         self.memory = Memory()
         initial_prompt = self.prompt_template["initial"].format(question=input_text)
-        print(f"💡 初始提示词：\n{initial_prompt}")
+        print(f"💡\x20初始提示词：\n{initial_prompt}")
         initial_result = self.llm.invoke(initial_prompt, **kwargs)
         self.memory.add_record("execution", initial_result)
         for i in range(self.max_iterations):
-            print(f"\n--- 第{i+1}/{self.max_iterations}轮迭代 ---")
+            print(f"\n----- 第{i+1}/{self.max_iterations}轮迭代 -----")
             last_result = self.memory.get_last_execution()
             reflect_prompt = self.prompt_template["reflect"].format(
                 question=input_text,
                 answer=last_result
             )
-            print(f"💡 反思提示词：\n{reflect_prompt}")
+            print(f"💡\x20反思提示词：\n{reflect_prompt}")
             feedback = self.llm.invoke(reflect_prompt, **kwargs)
             self.memory.add_record("reflection", feedback)
             if "无需改进" in feedback:
-                print("✅ AI认为结果已无需改进，任务完成")
+                print("✅\x20AI认为结果已无需改进，任务完成")
                 break
             refine_prompt = self.prompt_template["refine"].format(
                 question=input_text,
                 answer=last_result,
                 feedback=feedback
             )
-            print(f"💡 改进提示词：\n{refine_prompt}")
+            print(f"💡\x20改进提示词：\n{refine_prompt}")
             refined_result = self.llm.invoke(refine_prompt, **kwargs)
             self.memory.add_record("execution", refined_result)
         final_result = self.memory.get_last_execution()
         self.add_message(Message(input_text, "user"))
         self.add_message(Message(final_result, "assistant"))
-        print(f"🎉 最终答案：{final_result}")
+        print(f"🎉\x20最终答案：{final_result}")
         return final_result
     

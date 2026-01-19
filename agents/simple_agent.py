@@ -1,7 +1,7 @@
 import sys
 sys.path.append("..")
 from typing import Optional, Iterator
-from core import Agent, OpenAICompatibleLLM, Config, Message
+from core import Agent, OpenAICompatibleLLM, Message
 
 class SimpleAgent(Agent): 
     def __init__(
@@ -9,9 +9,8 @@ class SimpleAgent(Agent):
         name: str,
         llm: OpenAICompatibleLLM,
         system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
     ):
-        super().__init__(name, llm, system_prompt, config)
+        super().__init__(name, llm, system_prompt)
 
     def run(self, input_text: str, **kwargs) -> str:
         messages = self.stack_history_message(input_text)

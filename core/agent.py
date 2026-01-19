@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from .config import Config
 from .message import Message
 from .llm import OpenAICompatibleLLM
 
@@ -10,12 +9,10 @@ class Agent(ABC):
         name: str,
         llm: OpenAICompatibleLLM,
         system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
     ):
         self.name = name
         self.llm = llm
         self.system_prompt = system_prompt
-        self.config = config or Config()
         self._history: List[Message] = []
     
     @abstractmethod
@@ -41,4 +38,4 @@ class Agent(ABC):
         return messages
 
     def __str__(self) -> str:
-        return f"Agent(name={self.name}, llm_provider={self.llm.provider}, llm_model={self.llm.model})"
+        return f"Agent(name={self.name}, llm={self.llm.provider}:{self.llm.model})"

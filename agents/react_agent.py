@@ -1,9 +1,9 @@
-import re
 import sys
 sys.path.append("..")
+import re
 from typing import List, Tuple, Optional, Iterator
 from core import Agent, OpenAICompatibleLLM
-from core import Config, Message, Tool, ToolRegistry
+from core import Message, Tool, ToolRegistry
 
 REACT_PROMPT = \
 """你是一个具备推理和行动能力的AI助手，你可以通过思考分析问题，然后调用合适的工具来获取信息，最终整合信息给出准确的答案。
@@ -41,11 +41,10 @@ class ReActAgent(Agent):
         llm: OpenAICompatibleLLM,
         tool_registry: Optional[ToolRegistry] = None,
         system_prompt: Optional[str] = None,
-        config: Optional[Config] = None,
-        max_steps: int = 5,
         custom_prompt: Optional[str] = None,
+        max_steps: int = 5,
     ):
-        super().__init__(name, llm, system_prompt, config)
+        super().__init__(name, llm, system_prompt)
         if tool_registry is None:
             self.tool_registry = ToolRegistry()
         else:
@@ -57,7 +56,7 @@ class ReActAgent(Agent):
     def add_tool(self, tool):
         if hasattr(tool, "auto_expand") and tool.auto_expand:
             if hasattr(tool, "_available_tools") and tool._available_tools:
-                print(f"🛠️  MCP工具'{tool.name}'")
+                print(f"🛠️\x20\x20MCP工具'{tool.name}'")
                 for mcp_tool in tool._available_tools:
                     wrapped_tool = Tool(
                         name=f"{tool.name}_{mcp_tool['name']}",
@@ -76,7 +75,7 @@ class ReActAgent(Agent):
 
     def run(self, input_text: str, **kwargs) -> str:
         self.current_history = []
-        print(f"🤖 智能体'{self.name}'开始处理问题：{input_text}")
+        print(f"🤖\x20智能体'{self.name}'开始处理问题：{input_text}")
         current_step = 0
         while current_step < self.max_steps:
             current_step += 1
@@ -88,19 +87,19 @@ class ReActAgent(Agent):
                 question=input_text,
                 history=history_str
             )
-            print(f"💡 提示词：\n{prompt}")
+            print(f"💡\x20提示词：\n{prompt}")
             response_text = self.llm.invoke(prompt, **kwargs)
             if not response_text:
                 break
             thought, action = self._parse_output(response_text)
             if thought:
-                print(f"🧠 思考过程：{thought}")
+                print(f"🧠\x20思考过程：{thought}")
             if not action:
-                print("⚠️  警告：未能解析出有效的Action，流程终止")
+                print("⛔\x20未能解析出有效的Action，流程终止")
                 break
             if action.startswith("Finish"):
                 final_answer = self._parse_action_input(action)
-                print(f"🎉 最终答案：{final_answer}")
+                print(f"🎉\x20最终答案：{final_answer}")
                 self.add_message(Message(input_text, "user"))
                 self.add_message(Message(final_answer, "assistant"))
                 return final_answer
@@ -108,13 +107,12 @@ class ReActAgent(Agent):
             if not tool_name or tool_param is None:
                 self.current_history.append("Observation：无效的Action格式，请检查")
                 continue
-            print(f"🎬 下一步行动：{tool_name}('{tool_param}')")
+            print(f"🎬\x20下一步行动：{tool_name}('{tool_param}')")
             observation = self.tool_registry.execute_tool(tool_name, tool_param)
-            print(f"👀 结果观察：{observation}")
+            print(f"👀\x20结果观察：{observation}")
             self.current_history.append(f"Action: {action}")
             self.current_history.append(f"Observation: {observation}")
-        print("⏰ 已达到最大步数，流程终止")
-        final_answer = "😭 抱歉，我无法在限定步数内完成这个任务"
+        final_answer = "⏰\x20抱歉，智能体无法在限定步数内完成这个任务"
         self.add_message(Message(input_text, "user"))
         self.add_message(Message(final_answer, "assistant"))
         return final_answer
