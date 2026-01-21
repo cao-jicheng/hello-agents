@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 import os
 import threading
+import requests
 import numpy as np
 from typing import List, Union, Optional
 from core import EmbeddingConfig
@@ -140,7 +141,6 @@ class RestAPIEmbedding(EmbeddingModel):
         else:
             inputs = list(texts)
             single = False
-        import requests
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -153,13 +153,12 @@ class RestAPIEmbedding(EmbeddingModel):
             response = requests.post(self.base_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
         except Exception as e:
-            raise RuntimeError(f"Embedding API调用失败：{str(e)}")
+            print(f"⛔\x20Embedding API调用失败：{str(e)}")
+            return []
         data = response.json()
         items = data.get("data") or []
         vecs = [np.array(item.get("embedding")) for item in items]
-        if single:
-            return vecs[0]
-        return vecs
+        return vecs[0] if single else vecs
 
     @property
     def dimension(self) -> int:

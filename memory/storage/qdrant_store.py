@@ -27,49 +27,71 @@ class QdrantConnectionManager:
     def get_instance(
         cls,
         url: Optional[str] = None,
-        collection_name: str = "hello_agents_vectors"
+        api_key: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        vector_size: Optional[int] = None,
+        distance: Optional[str] = None,
+        exact_search: Optional[bool] = False
     ) -> "QdrantVectorStore":
-        key = (url or "local", collection_name)
+        config = QdrantConfig.from_env()
+        _url = url or config.url
+        _api_key = api_key or config.api_key
+        _collection_name = collection_name or config.collection_name
+        _distance = distance or config.distance
+        _exact_search = any([exact_search, config.exact_search])
+        key = (_url, _collection_name)
         if key not in cls._instances:
             with cls._lock:
                 if key not in cls._instances:
-                    print(f"✏️\x20\x20创建新的Qdrant连接：{collection_name}")
-                    cls._instances[key] = QdrantVectorStore()
-                else:
-                    print(f"♻️\x20\x20复用现有Qdrant连接：{collection_name}")
-        else:
-            print(f"♻️\x20\x20复用现有Qdrant连接：{collection_name}")    
+                    print(f"✏️\x20\x20创建新的Qdrant连接：{_collection_name}")
+                    cls._instances[key] = QdrantVectorStore(
+                        url = _url,
+                        api_key = _api_key,
+                        collection_name = _collection_name,
+                        distance = _distance,
+                        exact_search = _exact_search
+                    )
         return cls._instances[key]
 
 class QdrantVectorStore:
     def __init__(
         self,
-        url: Optional[str] = None,
-        collection_name: Optional[str] = None,
-        vector_size: Optional[int] = None
+        url: str,
+        api_key: str,
+        collection_name: Optional[str] = "hello_agents_vectors",
+        vector_size: Optional[int] = 384,
+        distance: Optional[str] = "cosine",
+        exact_search: Optional[bool] = False,
+        timeout: Optional[int] = 30,
+        hnsw_m: Optional[int] = 32,
+        hnsw_ef_construct: Optional[int] = 256,
+        hnsw_ef_search: Optional[int] = 128
         ):
         if not QDRANT_AVAILABLE:
             raise ImportError("未安装qdrant-client>=1.6.0")
-        config = QdrantConfig.from_env()
-        self.url = url or config.url
-        self.collection_name = collection_name or config.collection_name
-        self.vector_size = vector_size or config.vector_size
-        self.timeout = config.timeout
-        self.hnsw_m = config.hnsw_m
-        self.hnsw_ef_construct = config.hnsw_ef_construct
-        self.hnsw_ef_search = config.hnsw_ef_search
-        self.exact_search = (config.exact_search == "1")
+        self.url = url
+        self.api_key = api_key
+        self.collection_name = collection_name
+        self.vector_size = vector_size
+        self.exact_search = exact_search
+        self.timeout = timeout
+        self.hnsw_m = hnsw_m
+        self.hnsw_ef_construct = hnsw_ef_construct
+        self.hnsw_ef_search = hnsw_ef_search
         distance_map = {
             "cosine": Distance.COSINE,
             "dot": Distance.DOT,
             "euclidean": Distance.EUCLID,
         }
-        self.distance = distance_map.get(config.distance.lower(), Distance.COSINE)
+        self.distance = distance_map.get(distance.lower(), Distance.COSINE)
         self.client = None
         self._initialize_client()
         
     def _initialize_client(self):
-        self.client = QdrantClient(url=self.url, timeout=self.timeout)
+        if "localhost" in self.url:
+            self.client = QdrantClient(url=self.url, timeout=self.timeout)
+        else:
+            self.client = QdrantClient(url=self.url, api_key=self.api_key, timeout=self.timeout)
         print(f"✅\x20已成功连接到Qdrant服务：{self.url}")
         self._ensure_collection()
     
@@ -101,7 +123,7 @@ class QdrantVectorStore:
             except Exception as e:
                 print(f"⚠️\x20\x20更新HNSW配置失败：{e}")
         self._ensure_payload_indexes()
-        print(f"✅\x20已成功初始化Qdrant集合")
+        print(f"✅\x20已完成Qdrant集合的初始化")
 
     def _ensure_payload_indexes(self):
         index_fields = [
@@ -138,14 +160,13 @@ class QdrantVectorStore:
             return False
         if ids is None:
             ids = ["fake_id" for _ in range(len(vectors))]
-        print(f"[Qdrant] add_vectors：n_vectors={len(vectors)} n_meta={len(metadata)} collection={self.collection_name}")
         points = []
         for i, (vector, meta, point_id) in enumerate(zip(vectors, metadata, ids)):
             if not isinstance(vector, list):
-                print(f"⚠️\x20\x20非法向量类型：index={i} type={type(vector)} value={vector}")
+                print(f"⚠️\x20\x20非法向量类型：index={i}, type={type(vector)}, value={vector}")
                 continue
             if len(vector) != self.vector_size:
-                print(f"⚠️\x20\x20向量维度不匹配：期望{self.vector_size} 实际{len(vector)}")
+                print(f"⚠️\x20\x20向量维度不匹配：期望{self.vector_size}, 实际{len(vector)}")
                 continue
             timestamp = int(datetime.now().timestamp())
             meta_with_timestamp = meta.copy()
@@ -168,14 +189,16 @@ class QdrantVectorStore:
         if not points:
             print("⛔\x20没有生成有效的向量点，操作终止")
             return False
-        print(f"[Qdrant] upsert：points={len(points)}")
-        operation_info = self.client.upsert(
-            collection_name=self.collection_name,
-            points=points,
-            wait=True
-        )
-        print(f"✅\x20已成功添加{len(points)}个向量到Qdrant数据库")
-        return True
+        try:
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points,
+                wait=True
+            )
+            return True
+        except Exception as e:
+            print(f"⛔\x20添加向量失败：{str(e)}")
+            return False
     
     def search_similar(
         self, 
@@ -185,7 +208,7 @@ class QdrantVectorStore:
         where: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         if len(query_vector) != self.vector_size:
-            print(f"⛔\x20查询向量维度错误：期望{self.vector_size} 实际{len(query_vector)}")
+            print(f"⛔\x20查询向量维度错误：期望{self.vector_size}, 实际{len(query_vector)}")
             return []
         query_filter = None
         if where:
@@ -205,18 +228,22 @@ class QdrantVectorStore:
             search_params = models.SearchParams(hnsw_ef=self.hnsw_ef_search, exact=self.exact_search)
         except Exception:
             search_params = None
-        response = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_vector,
-            query_filter=query_filter,
-            limit=limit,
-            score_threshold=score_threshold,
-            with_payload=True,
-            with_vectors=False,
-            search_params=search_params
-        )
-        search_result = response.points
+        try:
+            response = self.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                query_filter=query_filter,
+                limit=limit,
+                score_threshold=score_threshold,
+                with_payload=True,
+                with_vectors=False,
+                search_params=search_params
+            )
+        except Exception as e:
+            print(f"⛔\x20搜索向量失败：{str(e)}")
+            return []
         results = []
+        search_result = response.points
         for hit in search_result:
             result = {
                 "id": hit.id,
@@ -224,7 +251,6 @@ class QdrantVectorStore:
                 "metadata": hit.payload or {}
             }
             results.append(result)
-        print(f"🔍\x20Qdrant数据库返回{len(results)}个搜索结果")
         return results
     
     def delete_vectors(self, ids: List[str]) -> bool:
@@ -236,7 +262,6 @@ class QdrantVectorStore:
                 points_selector=models.PointIdsList(points=ids),
                 wait=True
             )
-            print(f"✅\x20已成功删除{len(ids)}个向量")
             return True
         except Exception as e:
             print(f"⛔\x20删除向量失败：{str(e)}")
@@ -263,7 +288,6 @@ class QdrantVectorStore:
                 points_selector=models.FilterSelector(filter=query_filter),
                 wait=True
             )
-            print(f"✅\x20已成功删除{len(memory_ids)}个记忆")
             return True
         except Exception as e:
             print(f"⛔\x20删除记忆失败：{str(e)}")

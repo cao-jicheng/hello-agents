@@ -12,7 +12,7 @@ class WorkingMemory(BaseMemory):
         self.current_tokens = 0
         self.session_start = datetime.now()
         self.memories: List[MemoryItem] = []
-        self.memory_heap = []  # (priority, timestamp, memory_item)
+        self.memory_heap = []
     
     def add(self, memory_item: MemoryItem) -> str:
         self._expire_old_memories()

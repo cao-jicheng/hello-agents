@@ -69,13 +69,12 @@ class Neo4jGraphStore:
     
     def add_entity(self, entity_id: str, name: str, entity_type: str, properties: Dict[str, Any] = None) -> bool:
         props = properties or {}
-        timestamp = datetime.now().isoformat()
         props.update({
             "id": entity_id,
             "name": name,
             "type": entity_type,
-            "created_at": timestamp,
-            "updated_at": timestamp
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
         }) 
         query = """
             MERGE (e:Entity {id: $entity_id})
@@ -87,7 +86,6 @@ class Neo4jGraphStore:
                 result = session.run(query, entity_id=entity_id, properties=props)
                 record = result.single()
                 if record:
-                    print(f"✅\x20已成功添加实体：{name}({entity_type})")
                     return True
                 else:
                     print(f"⛔\x20添加实体失败：返回结果为空")
@@ -104,11 +102,10 @@ class Neo4jGraphStore:
         properties: Dict[str, Any] = None
     ) -> bool:
         props = properties or {}
-        timestamp = datetime.now().isoformat()
         props.update({
             "type": relationship_type,
-            "created_at": timestamp,
-            "updated_at": timestamp
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
         })
         query = f"""
             MATCH (from:Entity {{id: $from_id}})
@@ -122,7 +119,6 @@ class Neo4jGraphStore:
                 result = session.run(query, from_id=from_entity_id, to_id=to_entity_id, properties=props)
                 record = result.single()
                 if record:
-                    print(f"✅\x20已成功添加关系： {from_entity_id} --{relationship_type}-> {to_entity_id}")
                     return True
                 else:
                     print(f"⛔\x20添加关系失败：返回结果为空")
@@ -163,7 +159,6 @@ class Neo4jGraphStore:
                 entity_data["distance"] = record["distance"]
                 entity_data["relationship_path"] = record["relationship_path"]
                 entities.append(entity_data)
-            print(f"🔍\x20查找到{len(entities)}个关联实体")
             return entities
     
     def search_entities_by_name(self, name_pattern: str, entity_types: List[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
@@ -189,7 +184,6 @@ class Neo4jGraphStore:
             for record in result:
                 entity_data = dict(record['e'])
                 entities.append(entity_data)               
-            print(f"🔍\x20按名称搜索到{len(entities)}个实体")
             return entities
     
     def get_entity_relationships(self, entity_id: str) -> List[Dict[str, Any]]:
@@ -213,8 +207,7 @@ class Neo4jGraphStore:
                     "other_entity": other_data,
                     "direction": record["direction"]
                 }
-                relationships.append(rel)
-            print(f"🔍\x20已获取到{len(relationships)}条实体关系")    
+                relationships.append(rel) 
             return relationships
     
     def delete_entity(self, entity_id: str) -> bool:

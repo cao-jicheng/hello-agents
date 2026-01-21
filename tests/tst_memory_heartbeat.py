@@ -1,6 +1,12 @@
 import sys
 sys.path.append("..")
-from memory.storage import Neo4jGraphStore, QdrantConnectionManager
+from memory import get_text_embedder
+from memory import Neo4jGraphStore, QdrantConnectionManager
+
+print('-'*60)
+embedding = get_text_embedder()
+vec = embedding.encode("heartbeat_check")
+print(f"💓\x20Embedding模型通过心跳检测：name={embedding.model}, dim={len(vec)}")
 
 print('-'*60)
 neo4j = Neo4jGraphStore()

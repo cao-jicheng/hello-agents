@@ -80,10 +80,15 @@ class MemoryConfig(BaseModel):
     working_memory_tokens: int = 2000
     working_memory_ttl_minutes: int = 120
     perceptual_memory_modalities: List[str] = ["text", "image", "audio", "video"]
+    perceptual_memory_clip_mpdel: str = "openai/clip-vit-base-patch32"
+    perceptual_memory_clap_mpdel: str = "laion/clap-htsat-unfused"
 
 class QdrantConfig(BaseModel):
     url: str = Field(
         description="Qdrant服务URL"
+    )
+    api_key: str = Field(
+        description="Qdrant服务访问密钥"
     )
     collection_name: str = Field(
         description="向量集合名称"
@@ -94,34 +99,19 @@ class QdrantConfig(BaseModel):
     distance: str = Field(
         description="距离度量方式 (cosine, dot, euclidean)"
     )
-    timeout: int = Field(
-        description="连接超时（秒）"
-    )
-    hnsw_m: int = Field(
-        description="HNSW索引（每个节点的最大连接数）"
-    )
-    hnsw_ef_construct: int = Field(
-        description="HNSW索引（索引构建时的候选邻居数量）"
-    )
-    hnsw_ef_search: int = Field(
-        description="HNSW索引（索引搜索时的候选邻居数量）"
-    )
-    exact_search: str = Field(
-        description="精准搜索"
+    exact_search: bool = Field(
+        description="是否精确搜索"
     )
     
     @classmethod
     def from_env(cls) -> "QdrantConfig":
         return cls(
             url=os.getenv("QDRANT_URL", "http://localhost:6333"),
+            api_key=os.getenv("QDRANT_API_KEY"),
             collection_name=os.getenv("QDRANT_COLLECTION", "hello_agents_vectors"),
             vector_size=int(os.getenv("QDRANT_VECTOR_SIZE", "384")),
             distance=os.getenv("QDRANT_DISTANCE", "cosine"),
-            timeout=int(os.getenv("QDRANT_TIMEOUT", "30")),
-            hnsw_m=int(os.getenv("QDRANT_HNSW_M", "32")),
-            hnsw_ef_construct=int(os.getenv("QDRANT_HNSW_EF_CONSTRUCT", "256")),
-            hnsw_ef_search=int(os.getenv("QDRANT_HNSW_EF_SEARCH", "128")),
-            exact_search=os.getenv("QDRANT_EXACT_SEARCH", "0")
+            exact_search=(os.getenv("QDRANT_EXACT_SEARCH").lower() == "true")
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -165,25 +155,3 @@ class Neo4jConfig(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         return self.model_dump(exclude_none=True)
-
-
-class DatabaseConfig(BaseModel):
-    qdrant: QdrantConfig = Field(
-        description="Qdrant向量数据库配置"
-    )
-    neo4j: Neo4jConfig = Field(
-        description="Neo4j图数据库配置"
-    )
-    
-    @classmethod
-    def from_env(cls) -> "DatabaseConfig":
-        return cls(
-            qdrant=QdrantConfig.from_env(),
-            neo4j=Neo4jConfig.from_env()
-        )
-
-    def get_qdrant_config(self) -> Dict[str, Any]:
-        return self.qdrant.to_dict()
-    
-    def get_neo4j_config(self) -> Dict[str, Any]:
-        return self.neo4j.to_dict()
