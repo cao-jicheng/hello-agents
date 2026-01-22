@@ -65,7 +65,7 @@ class Neo4jGraphStore:
                     session.run(index_query)
                 except Exception as e:
                     print(f"⚠️\x20\x20索引创建失败：{index_query}\n{str(e)}")
-        print("✅\x20已完成Neo4j数据库索引创建")
+        print("✅\x20已完成Neo4j数据库的索引创建")
     
     def add_entity(self, entity_id: str, name: str, entity_type: str, properties: Dict[str, Any] = None) -> bool:
         props = properties or {}

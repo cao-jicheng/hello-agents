@@ -75,14 +75,13 @@ class SQLiteDocumentStore(DocumentStore):
     def __init__(self, db_path: str = "./memory.db"):
         if hasattr(self, "_initialized"):
             return
-        self.db_path = db_path
         self.local = threading.local()
-        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
-        abs_path = os.path.abspath(db_path)
-        if abs_path not in self._initialized_dbs:
+        self.db_path = os.path.abspath(db_path)
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        if self.db_path not in self._initialized_dbs:
             self._init_database()
-            self._initialized_dbs.add(abs_path)
-            print(f"✅\x20SQLite数据库初始化完成：{db_path}")
+            self._initialized_dbs.add(self.db_path)
+            print(f"✅\x20已完成SQLite数据库的初始化：{self.db_path}")
         self._initialized = True
     
     def _get_connection(self):

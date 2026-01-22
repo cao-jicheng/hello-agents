@@ -23,11 +23,11 @@ class MemoryManager:
         if enable_working:
             self.memory_types["working"] = WorkingMemory(self.config)
         if enable_episodic:
-            self.memory_types['episodic'] = EpisodicMemory(self.config)
+            self.memory_types["episodic"] = EpisodicMemory(self.config)
         if enable_semantic:
-            self.memory_types['semantic'] = SemanticMemory(self.config)
+            self.memory_types["semantic"] = SemanticMemory(self.config)
         if enable_perceptual:
-            self.memory_types['perceptual'] = PerceptualMemory(self.config)
+            self.memory_types["perceptual"] = PerceptualMemory(self.config)
         print(f"✅\x20MemoryManager初始化完成，启用记忆类型: {list(self.memory_types.keys())}")
     
     def add_memory(

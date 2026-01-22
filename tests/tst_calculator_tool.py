@@ -1,6 +1,13 @@
 import sys
 sys.path.append("..")
-from tools import global_tool_registry
+from tools import ToolRegistry, toolset_maps
+
+registry = ToolRegistry()
+registry.register_function(
+    name="calculator",
+    description=toolset_maps["calculator"]["description"],
+    func=toolset_maps["calculator"]["func"]
+)
 
 test_cases = [
     "2 + 3", 
@@ -13,5 +20,5 @@ test_cases = [
 
 for i, expression in enumerate(test_cases, 1):
     print(f"测试{i}: {expression}")
-    result = global_tool_registry.execute_tool("calculator", expression)
+    result = registry.execute_tool("calculator", expression)
     print(f"结果: {result}\n")

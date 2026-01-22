@@ -1,6 +1,13 @@
 import sys
 sys.path.append("..")
-from tools import global_tool_registry
+from tools import ToolRegistry, toolset_maps
+
+registry = ToolRegistry()
+registry.register_function(
+    name="summarized_searcher",
+    description=toolset_maps["summarized_searcher"]["description"],
+    func=toolset_maps["summarized_searcher"]["func"]
+)
 
 test_queries = [
     "  ",
@@ -11,6 +18,6 @@ test_queries = [
 for i, query in enumerate(test_queries, 1):
     print('-' * 100)
     print(f"测试{i}: {query}")
-    result = global_tool_registry.execute_tool("summarized_searcher", query)
+    result = registry.execute_tool("summarized_searcher", query)
     print("=== AI提炼汇总后的结果 ===")
     print(result)

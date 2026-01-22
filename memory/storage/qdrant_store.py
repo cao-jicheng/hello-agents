@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Union
 from ..base import QdrantConfig
+from ..embedding import get_dimension
 
 try:
     from qdrant_client import QdrantClient
@@ -29,7 +30,6 @@ class QdrantConnectionManager:
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         collection_name: Optional[str] = None,
-        vector_size: Optional[int] = None,
         distance: Optional[str] = None,
         exact_search: Optional[bool] = False
     ) -> "QdrantVectorStore":
@@ -59,7 +59,6 @@ class QdrantVectorStore:
         url: str,
         api_key: str,
         collection_name: Optional[str] = "hello_agents_vectors",
-        vector_size: Optional[int] = 384,
         distance: Optional[str] = "cosine",
         exact_search: Optional[bool] = False,
         timeout: Optional[int] = 30,
@@ -72,12 +71,12 @@ class QdrantVectorStore:
         self.url = url
         self.api_key = api_key
         self.collection_name = collection_name
-        self.vector_size = vector_size
         self.exact_search = exact_search
         self.timeout = timeout
         self.hnsw_m = hnsw_m
         self.hnsw_ef_construct = hnsw_ef_construct
         self.hnsw_ef_search = hnsw_ef_search
+        self.vector_size = get_dimension()
         distance_map = {
             "cosine": Distance.COSINE,
             "dot": Distance.DOT,
@@ -298,7 +297,6 @@ class QdrantVectorStore:
             collection_info = self.client.get_collection(self.collection_name)     
             return {
                 "name": self.collection_name,
-                "vectors_count": collection_info.vectors_count,
                 "indexed_vectors_count": collection_info.indexed_vectors_count,
                 "points_count": collection_info.points_count,
                 "segments_count": collection_info.segments_count,
