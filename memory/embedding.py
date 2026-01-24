@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 import os
 import threading
 import requests
@@ -135,6 +133,8 @@ class RestAPIEmbedding(EmbeddingModel):
         self._dimension = len(test)
 
     def encode(self, texts: Union[str, List[str]]):
+        if not texts:
+            print(f"[Embedding] ⚠️\x20\x20输入文本为空")
         if isinstance(texts, str):
             inputs = [texts]
             single = True
@@ -153,7 +153,7 @@ class RestAPIEmbedding(EmbeddingModel):
             response = requests.post(self.base_url, headers=headers, json=payload, timeout=30)
             response.raise_for_status()
         except Exception as e:
-            print(f"⛔\x20Embedding API调用失败：{str(e)}")
+            print(f"[Embedding] ⛔\x20调用失败：{str(e)}")
             return []
         data = response.json()
         items = data.get("data") or []
@@ -172,7 +172,7 @@ def create_embedding_model(model_type: str, **kwargs) -> EmbeddingModel:
     elif model_type == "tfidf":
         return TFIDFEmbedding(**kwargs)
     else:
-        print(f"⚠️\x20\x20不支持{model_type}类型，使用restapi代替")
+        print(f"[Embedding] ⚠️\x20\x20不支持{model_type}类型，使用restapi代替")
         return RestAPIEmbedding()
 
 def _build_embedder(**kwargs) -> EmbeddingModel:

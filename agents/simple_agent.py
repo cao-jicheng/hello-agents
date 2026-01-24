@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 from typing import Optional, Iterator
 from core import Agent, OpenAICompatibleLLM, Message
 

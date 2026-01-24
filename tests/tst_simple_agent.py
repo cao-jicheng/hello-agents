@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 from core import OpenAICompatibleLLM
 from agents import SimpleAgent
 
@@ -17,5 +15,5 @@ while True:
         print("👋\x20再见，期待下次为您服务！")
         break
     except Exception as e:
-        print(f"⛔\x20智能体'{client.name}'出现错误：{str(e)}")
+        print(f"[Agent] ⛔\x20智能体'{client.name}'出现错误：{str(e)}")
         break

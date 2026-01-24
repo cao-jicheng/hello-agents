@@ -81,7 +81,7 @@ class SQLiteDocumentStore(DocumentStore):
         if self.db_path not in self._initialized_dbs:
             self._init_database()
             self._initialized_dbs.add(self.db_path)
-            print(f"✅\x20已完成SQLite数据库的初始化：{self.db_path}")
+            print(f"[SQLite] 已完成数据库初始化：{self.db_path}")
         self._initialized = True
     
     def _get_connection(self):
@@ -365,4 +365,4 @@ class SQLiteDocumentStore(DocumentStore):
         if hasattr(self.local, "connection"):
             self.local.connection.close()
             delattr(self.local, "connection")
-            print("✅\x20SQLite数据库连接已关闭")
+            print("[SQLite] 数据库连接已关闭")

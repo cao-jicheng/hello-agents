@@ -200,33 +200,33 @@ class ToolRegistry:
             if expanded_tools:
                 for sub_tool in expanded_tools:
                     if sub_tool.name in self._tools:
-                        print(f"⚠️\x20\x20工具'{sub_tool.name}'已存在，将被覆盖")
+                        print(f"[Tool] ⚠️\x20\x20工具'{sub_tool.name}'已存在，将被覆盖")
                     self._tools[sub_tool.name] = sub_tool
-                print(f"🛠️\x20\x20工具'{tool.name}'已展开为{len(expanded_tools)}个独立工具")
+                print(f"[Tool] 工具'{tool.name}'已展开为{len(expanded_tools)}个独立工具")
                 return
         if tool.name in self._tools:
-            print(f"⚠️\x20\x20工具'{tool.name}'已存在，将被覆盖")
+            print(f"[Tool] ⚠️\x20\x20工具'{tool.name}'已存在，将被覆盖")
         self._tools[tool.name] = tool
-        print(f"✅\x20工具'{tool.name}'已成功注册")
+        print(f"[Tool] 工具'{tool.name}'已成功注册")
 
     def register_function(self, name: str, description: str, func: Callable[[str], str]):
         if name in self._functions:
-            print(f"⚠️\x20\x20工具'{name}'已存在，将被覆盖")
+            print(f"[Tool] ⚠️\x20\x20工具'{name}'已存在，将被覆盖")
         self._functions[name] = {
             "description": description,
             "func": func
         }
-        print(f"✅\x20工具'{name}'已成功注册")
+        print(f"[Tool] 工具'{name}'已成功注册")
 
     def unregister(self, name: str):
         if name in self._tools:
             del self._tools[name]
-            print(f"💀\x20工具'{name}'已注销")
+            print(f"[Tool] 💀\x20工具'{name}'已注销")
         elif name in self._functions:
             del self._functions[name]
-            print(f"💀\x20工具'{name}'已注销")
+            print(f"[Tool] 💀\x20工具'{name}'已注销")
         else:
-            print(f"⚠️\x20\x20工具'{name}'不存在")
+            print(f"[Tool] ⚠️\x20\x20工具'{name}'不存在")
 
     def get_tool(self, name: str) -> Optional[Tool]:
         return self._tools.get(name)
@@ -268,4 +268,4 @@ class ToolRegistry:
     def clear(self):
         self._tools.clear()
         self._functions.clear()
-        print("🗑️\x20\x20所有工具已清空")
+        print("[Tool] 所有工具已清空")

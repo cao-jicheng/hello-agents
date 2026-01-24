@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 from tools import ToolRegistry, toolset_maps
 
 registry = ToolRegistry()

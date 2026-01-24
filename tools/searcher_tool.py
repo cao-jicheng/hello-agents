@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 import os
 import json
 import requests
@@ -36,7 +34,7 @@ class SearchTool:
                 self.tavily_client = TavilyClient(api_key=config.tavily_api_key)
                 self.search_sources.append("tavily")
             except ImportError:
-                print("⚠️\x20\x20tavily-python库未安装")
+                print("[SearchTool] ⚠️\x20\x20tavily-python库未安装")
         if config.bocha_api_key:
             self.bocha_api_key = config.bocha_api_key
             self.search_sources.append("bocha")
@@ -44,12 +42,11 @@ class SearchTool:
 
     def search(self, query: str, auto_summary: bool=True) -> Dict[str, str]:
         if not query.strip():
-            print("⛔\x20输入的搜索内容为空")
+            print("[SearchTool] ⚠️\x20\x20输入的搜索内容为空")
             return {}
         if not self.search_sources:
-            print("⛔\x20没有可用的搜索源，请配置API密钥")
+            print("[SearchTool] ⛔\x20没有可用的搜索源，请配置API密钥")
             return {}
-        print(f"🔍\x20开始网络搜索：{query}")
         search_results = ""
         for source in self.search_sources:
             try:
@@ -57,13 +54,13 @@ class SearchTool:
                     search_results += self._search_with_tavily(query)
                 elif source == "bocha":
                     search_results += self._search_with_bocha(query)
-                print(f"✅\x20{source}已完成搜索")
+                print(f"[SearchTool] {source}已完成搜索")
             except Exception as e:
-                print(f"⚠️\x20\x20{source}搜索失败：{str(e)}")
+                print(f"[SearchTool] ⚠️\x20\x20{source}搜索失败：{str(e)}")
                 continue
         summarized_result = ""
         if auto_summary and search_results:
-            print("🎯\x20AI智能提炼汇总搜索内容")
+            print("[SearchTool] AI智能提炼汇总搜索内容")
             prompt = SUMMARY_PROMPT.format(search_results=search_results)
             summarized_result = self.llm.invoke(prompt)
         return {"search_results": search_results, "summarized_result": summarized_result}
@@ -105,6 +102,6 @@ def summarized_searcher(query: str) -> str:
     result = _search_tool.search(query, auto_summary=True)
     summarized_result = ""
     if result:
-        print(f"🌐\x20互联网搜索结果\n {result['search_results']}")
+        print(f"[SearchTool] 🌐\x20互联网搜索结果\n {result['search_results']}")
         summarized_result = result["summarized_result"]
     return summarized_result

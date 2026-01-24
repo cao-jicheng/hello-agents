@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 import ast
 from typing import Optional, List, Dict
 from core import Agent, OpenAICompatibleLLM, Message
@@ -52,15 +50,15 @@ class Planner:
 
     def plan(self, question: str, **kwargs) -> List[str]:
         prompt = self.prompt_template.format(question=question)
-        print(f"💡\x20Planner提示词：\n{prompt}")
+        print(f"[Agent] Planner提示词：\n{prompt}")
         response_text = self.llm.invoke(prompt, **kwargs)
-        print(f"🧮\x20AI已完成任务规划：\n{response_text}")
+        print(f"[Agent] AI已完成任务规划：\n{response_text}")
         try:
             plan_str = response_text.split("```python")[1].split("```")[0].strip()
             plan = ast.literal_eval(plan_str)
             return plan if isinstance(plan, list) else None
         except Exception as e:
-            print(f"⛔\x20解析任务规划文本出错： {str(e)}")
+            print(f"[Agent] ⛔\x20解析任务规划文本出错： {str(e)}")
             return None
 
 class Executor:
@@ -76,18 +74,18 @@ class Executor:
         history = ""
         final_answer = ""
         for i, step in enumerate(plan, 1):
-            print(f"🎬\x20正在执行步骤{i}/{len(plan)}：{step}")
+            print(f"\n----- 正在执行步骤 {i}/{len(plan)}：{step}")
             prompt = self.prompt_template.format(
                 question=question,
                 plan=plan,
                 history=history if history else "无",
                 current_step=step
             )
-            print(f"💡\x20Executor提示词：\n{prompt}")
+            print(f"[Agent] Executor提示词：\n{prompt}")
             response_text = self.llm.invoke(prompt, **kwargs)
             history += f"步骤{i}：{step}\n执行结果：{response_text}\n"
             final_answer = response_text
-            print(f"✅\x20步骤{i} 已完成，结果：{final_answer}")
+            print(f"[Agent] 步骤{i} 已完成，结果：{final_answer}")
         return final_answer
 
 class PlanAndExecuteAgent(Agent):  
@@ -115,10 +113,10 @@ class PlanAndExecuteAgent(Agent):
             final_answer = "AI无法生成有效的行动计划，任务终止"
             self.add_message(Message(input_text, "user"))
             self.add_message(Message(final_answer, "assistant"))
-            print(f"⛔\x20智能体运行出错：{final_answer}")
+            print(f"[Agent] ⛔\x20智能体运行出错：{final_answer}")
             return final_answer
         final_answer = self.executor.execute(input_text, plan, **kwargs)
         self.add_message(Message(input_text, "user"))
         self.add_message(Message(final_answer, "assistant"))
-        print(f"🎉\x20最终答案：{final_answer}")
+        print(f"\n🎉\x20最终答案：{final_answer}")
         return final_answer

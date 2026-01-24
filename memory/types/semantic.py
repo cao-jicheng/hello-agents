@@ -83,21 +83,21 @@ class SemanticMemory(BaseMemory):
     def _database_heartbeat_check(self):
         vector_check = self.vector_store.heartbeat_check()
         graph_check = self.graph_store.heartbeat_check()
-        print(f"💓\x20数据库通过心跳检测：Qdrant={vector_check}, Neo4j={graph_check}")
+        print(f"[Semantic] 数据库通过心跳检测：Qdrant={vector_check}, Neo4j={graph_check}")
     
     def _init_nlp(self):
         try:
             self.nlp_zh = spacy.load("zh_core_web_sm")
         except Exception as e:
             self.nlp_zh = None
-            print(f"⚠️\x20\x20中文spaCy模型不可用：{str(e)}")
+            print(f"[Semantic] ⚠️\x20\x20中文spaCy模型不可用：{str(e)}")
         try:
             self.nlp_en = spacy.load("en_core_web_sm")
         except Exception as e:
             self.nlp_en = None
-            print(f"⚠️\x20\x20英文spaCy模型不可用：{str(e)}")
+            print(f"[Semantic] ⚠️\x20\x20英文spaCy模型不可用：{str(e)}")
         if not any([self.nlp_zh, self.nlp_en]):
-            print("⛔\x20中文和英文spaCy模型均不可用，实体提取功能将受限")
+            print("[Semantic] ⛔\x20中文和英文spaCy模型均不可用，实体提取功能将受限")
     
     def add(self, memory_item: MemoryItem) -> str:
         embedding = self.embedding_model.encode(memory_item.content)
@@ -119,25 +119,24 @@ class SemanticMemory(BaseMemory):
                 "entity_count": len(entities),
                 "relation_count": len(relations)
             }
-        status = self.vector_store.add_vectors(
+        success = self.vector_store.add_vectors(
             vectors=[embedding.tolist()],
             metadata=[metadata],
             ids=[memory_item.id]
         )
-        if not status:
-            print("⚠️\x20\x20记忆存储到Qdrant向量数据库失败，但已添加到Neo4j图数据库")
+        if not success:
+            print("[Semantic] ⚠️\x20\x20记忆存储到Qdrant向量数据库失败，但已添加到Neo4j图数据库")
         memory_item.metadata["entities"] = [e.entity_id for e in entities]
         memory_item.metadata["relations"] = [
             f"{r.from_entity}-{r.relation_type}-{r.to_entity}" for r in relations
         ]
         self.semantic_memories.append(memory_item)
-        print(f"✅\x20已成功添加语义记忆：{len(entities)}个实体, {len(relations)}条关系")
         return memory_item.id
     
     def retrieve(self, query: str, limit: int = 5, **kwargs) -> List[MemoryItem]:
         user_id = kwargs.get("user_id")
         if not user_id:
-            print("⛔\x20输入的'user_id'为空")
+            print("[Semantic] ⚠️\x20\x20输入的'user_id'为空")
             return []
         vector_results = self._vector_search(query, limit * 2, user_id)
         graph_results = self._graph_search(query, limit * 2, user_id)
@@ -191,7 +190,6 @@ class SemanticMemory(BaseMemory):
                 **result["metadata"]
             }
             formatted_results.append(formatted_result)
-        print(f"🔍\x20Qdrant向量数据库搜索返回{len(formatted_results)}个结果")
         return formatted_results
 
     def _graph_search(self, query: str, limit: int, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -253,7 +251,6 @@ class SemanticMemory(BaseMemory):
             })
         results.sort(key=lambda x: x["similarity"], reverse=True)
         ret_results = results[:limit]
-        print(f"🔍\x20Neo4j图数据库搜索到{len(results)}个结果，返回{len(ret_results)}个结果")
         return ret_results
 
     def _combine_and_rank_results(
@@ -318,12 +315,11 @@ class SemanticMemory(BaseMemory):
         return sorted_results[:limit]
     
     def _detect_language(self, text: str) -> str:
-        chinese_chars = sum(1 for ch in text if '\u4e00' <= ch <= '\u9fff')
-        total_chars = len(text.replace(' ', ''))
-        if total_chars == 0:
-            return "en"
-        chinese_ratio = chinese_chars / total_chars
-        return "zh" if chinese_ratio > 0.3 else "en"
+        try:
+            from langdetect import detect
+            return detect(text[:1000]) if text else "unknown"
+        except Exception:
+            return "unknown"
     
     def _extract_entities(self, text: str) -> List[Entity]:
         entities = []
@@ -491,7 +487,7 @@ class SemanticMemory(BaseMemory):
         for memory in self.semantic_memories:
             if memory.id == memory_id:
                 return memory
-        print(f"⛔\x20未查询到记忆：ID={memory_id}, 记忆总数量={len(self.semantic_memories)}")
+        print(f"[Semantic] ⚠️\x20\x20未查询到记忆：ID={memory_id}, 记忆总数量={len(self.semantic_memories)}")
         return None
     
     def update(
@@ -571,7 +567,7 @@ class SemanticMemory(BaseMemory):
         self.memory_embeddings.clear()
         self.entities.clear()
         self.relations.clear() 
-        print("🗑️\x20\x20语义记忆系统已完全清空")
+        print("[Semantic] 已完全清空语义记忆")
 
     def get_all(self) -> List[MemoryItem]:
         return self.semantic_memories.copy()
@@ -663,7 +659,6 @@ class SemanticMemory(BaseMemory):
                 }
             }
         else:
-            print(f"⛔\x20导出知识图谱失败")
             return {
                 "entities": {},
                 "relations": [],

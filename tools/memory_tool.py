@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from core import Tool, ToolParameter, tool_action

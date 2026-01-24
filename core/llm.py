@@ -38,22 +38,21 @@ class OpenAICompatibleLLM:
 
     def invoke(self, prompts: str|list, **kwargs) -> str:
         messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
-        print(f"🚀\x20正在调用{self.provider}:{self.model}模型")
+        print(f"[LLM] 🚀\x20正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 **kwargs,
             )
-            print("✅\x20LLM响应成功")
             return response.choices[0].message.content
         except Exception as e:
-            print(f"⛔\x20LLM调用失败：{str(e)}")
+            print(f"[LLM] ⛔\x20调用失败：{str(e)}")
             return ""
     
     def stream_invoke(self, prompts: str|list, **kwargs) -> Iterator[str]:
         messages = [{"role": "user", "content": prompts}] if isinstance(prompts, str) else prompts
-        print(f"🚀\x20正在调用{self.provider}:{self.model}模型")
+        print(f"[LLM] 🚀\x20正在调用{self.provider}:{self.model}模型")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -61,12 +60,11 @@ class OpenAICompatibleLLM:
                 stream=True,
                 **kwargs,
             )
-            print("✅\x20LLM响应成功")
             for chunk in response:
                 content = chunk.choices[0].delta.content
                 if content:
                     yield content
             yield "\n"
         except Exception as e:
-            print(f"⛔\x20LLM调用失败：{str(e)}")
+            print(f"[LLM] ⛔\x20调用失败：{str(e)}")
             yield ""

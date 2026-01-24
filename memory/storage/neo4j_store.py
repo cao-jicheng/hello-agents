@@ -37,15 +37,15 @@ class Neo4jGraphStore:
         try:
             self.driver = GraphDatabase.driver(self.uri, auth=(self.username, self.password), **config)
             self.driver.verify_connectivity()
-            print(f"✅\x20已成功连接到Neo4j数据库：{self.uri}")
+            print(f"[Neo4j] 已成功连接到数据库：{self.uri}")
         except AuthError as e:
-            print(f"⛔\x20Neo4j用户认证失败：{str(e)}")
+            print(f"[Neo4j] ⛔\x20用户认证失败：{str(e)}")
             raise RuntimeError
         except ServiceUnavailable as e:
-            print(f"⛔\x20Neo4j数据库服务不可用：{str(e)}")
+            print(f"[Neo4j] ⛔\x20服务不可用：{str(e)}")
             raise RuntimeError
         except Exception as e:
-            print(f"⛔\x20Neo4j数据库连接失败：{str(e)}")
+            print(f"[Neo4j] ⛔\x20数据库连接失败：{str(e)}")
             raise RuntimeError
     
     def _create_indexes(self):
@@ -64,8 +64,8 @@ class Neo4jGraphStore:
                 try:
                     session.run(index_query)
                 except Exception as e:
-                    print(f"⚠️\x20\x20索引创建失败：{index_query}\n{str(e)}")
-        print("✅\x20已完成Neo4j数据库的索引创建")
+                    print(f"[Neo4j] ⚠️\x20\x20索引创建失败：{index_query}\n{str(e)}")
+        print("[Neo4j] 已完成数据库的索引创建")
     
     def add_entity(self, entity_id: str, name: str, entity_type: str, properties: Dict[str, Any] = None) -> bool:
         props = properties or {}
@@ -88,10 +88,10 @@ class Neo4jGraphStore:
                 if record:
                     return True
                 else:
-                    print(f"⛔\x20添加实体失败：返回结果为空")
+                    print(f"[Neo4j] ⛔\x20添加实体失败：返回结果为空")
                     return False
             except Exception as e:
-                print(f"⛔\x20添加实体失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20添加实体失败：{str(e)}")
                 return False
     
     def add_relationship(
@@ -121,10 +121,10 @@ class Neo4jGraphStore:
                 if record:
                     return True
                 else:
-                    print(f"⛔\x20添加关系失败：返回结果为空")
+                    print(f"[Neo4j] ⛔\x20添加关系失败：返回结果为空")
                     return False
             except Exception as e:
-                print(f"⛔\x20添加关系失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20添加关系失败：{str(e)}")
                 return False
     
     def find_related_entities(
@@ -151,7 +151,7 @@ class Neo4jGraphStore:
             try:
                 result = session.run(query, entity_id=entity_id, limit=limit)
             except Exception as e:
-                print(f"⛔\x20查找关联实体失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20查找关联实体失败：{str(e)}")
                 return []
             entities = []
             for record in result:
@@ -178,7 +178,7 @@ class Neo4jGraphStore:
             try:
                 result = session.run(query, **params)
             except Exception as e:
-                print(f"⛔\x20按名称搜索实体失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20按名称搜索实体失败：{str(e)}")
                 return []
             entities = []
             for record in result:
@@ -196,7 +196,7 @@ class Neo4jGraphStore:
             try:
                 result = session.run(query, entity_id=entity_id)
             except Exception as e:
-                print(f"⛔\x20获取实体关系失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20获取实体关系失败：{str(e)}")
                 return []                
             relationships = []
             for record in result:
@@ -219,11 +219,11 @@ class Neo4jGraphStore:
             try:
                 result = session.run(query, entity_id=entity_id)
             except Exception as e:
-                print(f"⛔\x20删除实体失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20删除实体失败：{str(e)}")
                 return False            
             summary = result.consume()
             deleted_count = summary.counters.nodes_deleted
-            print(f"✅\x20已成功删除实体：{entity_id}（同时删除{deleted_count}个节点）")
+            print(f"[Neo4j] 已成功删除实体：{entity_id}（同时删除{deleted_count}个节点）")
             return deleted_count > 0
     
     def clear_all(self) -> bool:
@@ -232,12 +232,12 @@ class Neo4jGraphStore:
             try:
                 result = session.run(query)
             except Exception as e:
-                print(f"⛔\x20清空Neo4j数据库失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20清空数据库失败：{str(e)}")
                 return False
             summary = result.consume()
             deleted_nodes = summary.counters.nodes_deleted
             deleted_relationships = summary.counters.relationships_deleted
-            print(f"✅\x20已清空Neo4j数据库：删除{deleted_nodes}个节点，删除{deleted_relationships}条关系")
+            print(f"[Neo4j] 已清空数据库：删除{deleted_nodes}个节点，删除{deleted_relationships}条关系")
             return True
     
     def get_stats(self) -> Dict[str, Any]:
@@ -255,7 +255,7 @@ class Neo4jGraphStore:
                     record = result.single()
                     stats[key] = record["count"] if record else 0
             except Exception as e:
-                print(f"⛔\x20获取Neo4j数据库统计信息失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20获取数据库统计信息失败：{str(e)}")
                 return {}
             return stats
     
@@ -266,7 +266,7 @@ class Neo4jGraphStore:
                 record = result.single()
                 return record["health"] == 1
             except Exception as e:
-                print(f"⛔\x20Neo4j数据库心跳检测失败：{str(e)}")
+                print(f"[Neo4j] ⛔\x20心跳检测失败：{str(e)}")
             return False
  
     def __del__(self):

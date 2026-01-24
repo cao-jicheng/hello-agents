@@ -266,6 +266,7 @@ class EpisodicMemory(BaseMemory):
             self.doc_store.delete_memory(mid)
         if ids:
             self.vector_store.delete_memories(ids)
+        print("[Episodic] 已完全清空情景记忆")
 
     def forget(self, strategy: str = "importance_based", threshold: float = 0.1, max_age_days: int = 30) -> int:
         forgotten_count = 0

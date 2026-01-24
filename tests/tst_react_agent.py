@@ -1,5 +1,3 @@
-import sys
-sys.path.append("..")
 from core import OpenAICompatibleLLM
 from agents import ReActAgent
 from tools import ToolRegistry, toolset_maps

@@ -28,7 +28,7 @@ class MemoryManager:
             self.memory_types["semantic"] = SemanticMemory(self.config)
         if enable_perceptual:
             self.memory_types["perceptual"] = PerceptualMemory(self.config)
-        print(f"✅\x20MemoryManager初始化完成，启用记忆类型: {list(self.memory_types.keys())}")
+        print(f"[MemoryManager] 初始化完成，启用记忆类型: {list(self.memory_types.keys())}")
     
     def add_memory(
         self,
@@ -95,14 +95,14 @@ class MemoryManager:
         for memory_type, memory_instance in self.memory_types.items():
             if memory_instance.has_memory(memory_id):
                 return memory_instance.update(memory_id, content, importance, metadata)
-        print(f"⚠️\x20\x20未找到记忆：{memory_id}")
+        print(f"[MemoryManager] ⚠️\x20\x20未找到记忆：{memory_id}")
         return False
     
     def remove_memory(self, memory_id: str) -> bool:
         for memory_type, memory_instance in self.memory_types.items():
             if memory_instance.has_memory(memory_id):
                 return memory_instance.remove(memory_id)
-        print(f"⚠️\x20\x20未找到记忆：{memory_id}")
+        print(f"[MemoryManager] ⚠️\x20\x20未找到记忆：{memory_id}")
         return False
     
     def forget_memories(
@@ -125,7 +125,7 @@ class MemoryManager:
         importance_threshold: float = 0.7
     ) -> int:
         if from_type not in self.memory_types or to_type not in self.memory_types:
-            print(f"⚠️\x20\x20记忆类型不存在：{from_type} -> {to_type}")
+            print(f"[MemoryManager] ⚠️\x20\x20记忆类型不存在：{from_type} -> {to_type}")
             return 0
         source_memory = self.memory_types[from_type]
         target_memory = self.memory_types[to_type]
@@ -141,7 +141,7 @@ class MemoryManager:
                 memory.importance *= 1.1
                 target_memory.add(memory)
                 consolidated_count += 1
-        print(f"✅\x20记忆整合完成: {consolidated_count}条记忆从{from_type}转移到{to_type}")
+        print(f"[MemoryManager] 记忆整合完成: {consolidated_count}条记忆从 {from_type} 转移到 {to_type} ")
         return consolidated_count
 
     def get_memory_stats(self) -> Dict[str, Any]:

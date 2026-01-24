@@ -14,9 +14,9 @@ def get_weather(city: str) -> str:
         weather = current_condition["weatherDesc"][0]["value"]
         return f"城市{nearest_area}，当前天气{weather}， 温度{temp_c}摄氏度，湿度{humidity}%，能见度{visibility}级"
     except requests.exceptions.RequestException as e:
-        return f"查询天气时遇到网络问题：{e}"
+        return f"查询天气时遇到网络问题：{str(e)}"
     except (KeyError, IndexError) as e:
-        return f"解析天气数据失败：{e}"
+        return f"解析天气数据失败：{str(e)}"
 
 
 

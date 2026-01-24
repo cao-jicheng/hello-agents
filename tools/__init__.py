@@ -1,10 +1,9 @@
-import sys
-sys.path.append("..")
 from core import ToolRegistry
 from .calculator_tool import calculator
 from .searcher_tool import summarized_searcher
 from .weather_tool import get_weather
 from .memory_tool import MemoryTool
+from .rag_tool import RAGTool
 
 toolset_maps = {
     "calculator": {
